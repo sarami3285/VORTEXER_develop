@@ -1,0 +1,26 @@
+# Visual Studio テンポラリ
+.vs/
+out/
+build/
+*.user
+*.aps
+*.ncb
+*.opendb
+*.VC.db
+
+# ビルド成果物
+Assets/
+Debug/
+Release/
+x64/
+*.exe
+*.pdb
+*.obj
+*.ilk
+*.log
+*.tlog
+*.lastbuildstate
+
+# その他
+ipch/
+*.sdf
