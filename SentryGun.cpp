@@ -31,6 +31,7 @@ SentryGun::SentryGun(Game* game)
 
     mTexturePath = "Assets/Turret.png";
     SpriteComponent* sc = new SpriteComponent(this, 0 , mTexturePath, true , Vector2{5,5});
+    mSprite = sc;
     sc->SetColor(1.0f, 1.0f, 1.0f);
 
     new HPBarComponent(this, mHPComponent);

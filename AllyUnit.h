@@ -20,15 +20,17 @@ public:
     ~AllyUnit();
 
     void UpdateActor(float deltaTime) override;
-    void TakeDamage(int amount);
+    virtual void TakeDamage(int amount);
     class CollisionComponent* GetCircle() { return mCollision; }
+
+protected:
+    MoveComponent* mMove;
+    AllyAIComponent* mAllyAI;
+    HPComponent* mHP;
+    CollisionComponent* mCollision;
+    SpriteComponent* mSprite;
 
 private:
     std::string mMode;
-    HPComponent* mHP;
-    MoveComponent* mMove;
-    AllyAIComponent* mAllyAI;
-    CollisionComponent* mCollision;
     HPBarComponent* mHPBar;
-    SpriteComponent* mSprite;
 };

@@ -29,22 +29,17 @@ public:
 	void UpdateActor(float deltaTime) override;
 
 	void SetSpeed(float speed);
-
 	void SetMaxLifeTime(float time) { mMaxLifeTime = time; }
 	void SetBaseDamage(float damage) { mDamage = damage; }
 	void SetDecayRate(float rate) { mDecayRate = rate; }
-
-	float GetBaseDamage() const { return mDamage; }
-
-	void SetOwnerType(EBulletOwner owner) { mOwnerType = owner; }
-	EBulletOwner GetOwnerType() const { return mOwnerType; }
-
-	class SpriteComponent* GetSprite() const { return mSpriteComponent; }
-	class CollisionComponent* GetCircle() const { return mCollision; } 
-
 	void SetDamageRate(float amount) { DamageRate = amount; };
 	void SetTexture(const std::string& path);
+	void SetOwnerType(EBulletOwner owner) { mOwnerType = owner; }
 
+	EBulletOwner GetOwnerType() const { return mOwnerType; }
+	class SpriteComponent* GetSprite() const { return mSpriteComponent; }
+	class CollisionComponent* GetCircle() const { return mCollision; } 
+	float GetBaseDamage() const { return mDamage; }
 
 protected:
 	bool isDecay = true;

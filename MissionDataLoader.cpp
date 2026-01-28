@@ -1,18 +1,9 @@
 ﻿#include "MissionDataLoader.h"
 
-bool MissionDataLoader::LoadMission(int id, MissionData& outData) {
-    if (id < 100) {
-        return LoadFromJson(id, outData);
-    }
-    else {
-        GenerateRandomMission(id, outData);
-        return true;
-    }
-}
+bool MissionDataLoader::LoadMission(int id, MissionData& outData) { if (id < 100) { return LoadFromJson(id, outData); } else { GenerateRandomMission(id, outData); return true; } }
 
 bool MissionDataLoader::LoadFromJson(int id, MissionData& outData) {
-    std::ifstream file("Assets/Data/MissionData.json");
-    if (!file.is_open()) return false;
+    std::ifstream file("Assets/Data/MissionData.json"); if (!file.is_open()) return false;
 
     json j;
     file >> j;
@@ -40,22 +31,18 @@ bool MissionDataLoader::LoadFromJson(int id, MissionData& outData) {
 
             auto& tc = m["map_tile_config"];
             outData.mapTileConfig.tileType = tc.value("tile_type", "City");
-            outData.mapTileConfig.tileSize = tc.value("tile_size", 540); //540が基準
+            outData.mapTileConfig.tileSize = tc.value("tile_size", 540);
             outData.mapTileConfig.tilesetTexture = tc.value("tileset_texture", "Assets/MapTile.png");
             outData.mapTileConfig.tileSetRows = tc.value("tile_set_rows", 3);
 
-            // 敵配置データの読み込み
             if (m.contains("enemy_configs") && m["enemy_configs"].is_array()) {
                 for (auto& e : m["enemy_configs"]) {
                     EnemyConfig config;
                     config.type = e.value("type", "Standard");
                     config.count = e.value("count", 0);
-
-                    // 通常の敵配置（min_dist等）
                     config.min_dist = static_cast<float>(e.value("min_dist", 100.0));
                     config.max_dist = static_cast<float>(e.value("max_dist", 1000.0));
 
-                    // 固定位置の読み込み
                     if (e.contains("positions") && e["positions"].is_array()) {
                         for (auto& posArr : e["positions"]) {
                             if (posArr.is_array() && posArr.size() >= 2) {
@@ -64,9 +51,6 @@ bool MissionDataLoader::LoadFromJson(int id, MissionData& outData) {
                         }
                     }
 
-
-
-                    // --- ここから艦隊（Formation）用の追加読み込み ---
                     if (config.type == "Formation") {
                         config.formationType = e.value("formation_type", "");
                         config.mainShipType = e.value("main_ship_type", "");
@@ -81,7 +65,6 @@ bool MissionDataLoader::LoadFromJson(int id, MissionData& outData) {
                             );
                         }
 
-                        // 護衛艦の詳細設定
                         if (e.contains("guard_details") && e["guard_details"].is_array()) {
                             for (auto& g : e["guard_details"]) {
                                 GuardDetailConfig gd;
@@ -92,13 +75,22 @@ bool MissionDataLoader::LoadFromJson(int id, MissionData& outData) {
                             }
                         }
                     }
-                    // --- ここまで ---
 
                     outData.enemyConfigs.push_back(config);
                 }
             }
 
-            // 破壊対象データの読み込み　（対象破壊ミッション用）
+            if (m.contains("reinforcements") && m["reinforcements"].is_array()) {
+                for (auto& re : m["reinforcements"]) {
+                    ReinforcementConfig rConfig;
+                    rConfig.time = re.value("time", 0.0f);
+                    rConfig.type = re.value("type", "LowLevelEnemy");
+                    rConfig.count = re.value("count", 0);
+                    rConfig.spawned = false;
+                    outData.reinforcements.push_back(rConfig);
+                }
+            }
+
             if (m.contains("target_configs") && m["target_configs"].is_array()) {
                 for (auto& t : m["target_configs"]) {
                     TargetConfig tConfig;
@@ -112,16 +104,49 @@ bool MissionDataLoader::LoadFromJson(int id, MissionData& outData) {
                 }
             }
 
+            if (m.contains("defense_target")) {
+                auto& dt = m["defense_target"];
+                outData.defenseTarget.type = dt.value("type", "Core");
+                outData.defenseTarget.hp = dt.value("hp", 1000);
+                if (dt.contains("position") && dt["position"].is_array()) {
+                    outData.defenseTarget.position = Vector2(
+                        dt["position"][0].get<float>(),
+                        dt["position"][1].get<float>()
+                    );
+                }
+            }
+
+            if (m.contains("defense_duration")) {
+                outData.defenseDuration = m["defense_duration"].get<float>();
+            }
+
+            if (m.contains("defense_target")) {
+                auto& dt = m["defense_target"];
+                outData.defenseTarget.type = dt.value("type", "Core");
+                if (dt.contains("position") && dt["position"].is_array()) {
+                    outData.defenseTarget.position = Vector2(
+                        dt["position"][0].get<float>(),
+                        dt["position"][1].get<float>()
+                    );
+                }
+                outData.defenseTarget.hp = dt.value("hp", 1000);
+                outData.defenseTarget.texture = dt.value("texture", "Assets/AllyBase.png"); // デフォルトテクスチャ
+            }
+
+            outData.defenseDuration = m.value("defense_duration", 0.0f);
+
             found = true;
             break;
         }
     }
+
+
+
     return found;
 }
 
 void MissionDataLoader::GenerateRandomMission(int id, MissionData& outData) {
-    outData = MissionData();
-    outData.id = id;
+    outData = MissionData(); outData.id = id;
 
     srand(static_cast<unsigned int>(id));
     int level = ((id - 100) % 5) + 1;
@@ -142,7 +167,6 @@ void MissionDataLoader::GenerateRandomMission(int id, MissionData& outData) {
 
     outData.enemyConfigs.clear();
 
-    // 敵グループの生成
     int groupCount = 3 + level;
     for (int i = 0; i < groupCount; ++i) {
         EnemyConfig group;
@@ -150,13 +174,12 @@ void MissionDataLoader::GenerateRandomMission(int id, MissionData& outData) {
         group.count = 5 + level;
         group.min_dist = 100.0f;
         group.max_dist = 1500.0f;
-        
+
         group.centerPosition = Vector2(
             static_cast<float>(800 + rand() % static_cast<int>(outData.mapWidth - 1600)),
             static_cast<float>(800 + rand() % static_cast<int>(outData.mapHeight - 1600))
         );
 
-        // 陣形設定
         group.formationType = "Circle";
         group.radiusX = 400.0f;
         group.radiusY = 400.0f;

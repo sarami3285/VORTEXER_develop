@@ -30,6 +30,7 @@ void BattleShip::SetupComponents(const Vector2& startPos)
 	SetPosition(startPos);
 	mTexturePath = "Assets/LargeBattleShip.png";
 	SpriteComponent* sc = new SpriteComponent(this, 3, mTexturePath, true, Vector2{10, 10});
+	mSprite = sc;
 
 	MoveComponent* mc = new MoveComponent(this , 0 , 50.0f , 1.0f);
 

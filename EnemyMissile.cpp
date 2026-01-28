@@ -5,6 +5,7 @@
 #include "CollisionComponent.h"
 #include "SpriteComponent.h"
 #include "Math.h"
+#include "DeathEffect.h"
 
 EnemyMissile::EnemyMissile(Game* game, const Vector2& startPos, float rotation, float speed, float lifeTime, int damage)
     : EnemyBullet(game, startPos, rotation, speed, lifeTime, damage)
@@ -77,6 +78,11 @@ void EnemyMissile::UpdateActor(float deltaTime)
             Explode();
             SetState(EStop);
         }
+    }
+    else {
+        DeathEffect* effect = new DeathEffect(GetGame(), 1);
+        effect->SetPosition(GetPosition());
+        effect->SetScale(0.7f);
     }
 }
 

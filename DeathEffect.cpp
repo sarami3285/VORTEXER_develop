@@ -22,10 +22,10 @@ void DeathEffect::UpdateActor(float deltaTime)
     mSpawnTimer -= deltaTime;
     if (mSpawnTimer <= 0.0f) {
         mSpawnTimer = 0.12f + Random::GetFloatRange(0.0f, 0.05f);
-        Vector2 offset(Random::GetFloatRange(-40.0f, 40.0f), Random::GetFloatRange(-40.0f, 40.0f));
+        Vector2 offset(Random::GetFloatRange(-60.0f, 60.0f), Random::GetFloatRange(-60.0f, 60.0f));
         ExplosionParticle* p = new ExplosionParticle(GetGame());
         p->SetPosition(GetPosition() + offset);
-        p->SetScale(GetScale() * Random::GetFloatRange(0.8f, 1.3f));
+        p->SetScale(GetScale() * Random::GetFloatRange(0.7f, 1.3f));
 
         mRemainingCount--;
     }

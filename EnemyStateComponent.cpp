@@ -40,43 +40,28 @@ void EnemyStateComponent::OnDamageTaken()
 	mAttackTimer = mAttackDuration;
 }
 
-void EnemyStateComponent::CheckTransitions()
-{
-	if (!mPlayer) return;
+void EnemyStateComponent::CheckTransitions() {
+	Vector2 pos = mOwner->GetPosition();
+	mTarget = mOwner->GetGame()->GetNearestTarget(pos);
 
-	if (mPatrolComp == nullptr && mCurrentState == EState::Attack)
-	{
+	if (!mTarget) {
+		if (mCurrentState == EState::Attack) {
+			SetState(EState::Patrol);
+		}
 		return;
 	}
 
-	Vector2 toPlayer = mPlayer->GetPosition() - mOwner->GetPosition();
-	float dist = toPlayer.Length();
-	float chaseRange = 0.0f;
+	float distSq = (mTarget->GetPosition() - pos).LengthSq();
 
-	if (mOrbitAttackComp) {
-		chaseRange = mOrbitAttackComp->mMaxChaseDistance;
-	}
-	else if (mRangedAttackComp) {
-		chaseRange = mRangedAttackComp->mChaseRange;
-	}
-
-	if (mCurrentState == EState::Patrol)
-	{
-		if (dist <= mSearchRange)
-		{
+	if (mCurrentState == EState::Patrol) {
+		if (distSq < mSearchRange * mSearchRange) {
 			SetState(EState::Attack);
 		}
 	}
-	else if (mCurrentState == EState::Attack)
-	{
-		if (mAttackTimer > 0.0f)
-		{
-			return;
-		}
-
-		if (chaseRange > 0.0f && dist > chaseRange)
-		{
+	else if (mCurrentState == EState::Attack) {
+		if (mTarget->GetState() != Actor::EAlive || distSq > (mSearchRange * 1.2f) * (mSearchRange * 1.2f)) {
 			SetState(EState::Patrol);
+			mTarget = nullptr;
 		}
 	}
 }

@@ -4,6 +4,7 @@
 #include "EnemyBehaviorComponent.h"
 #include "EnemyStateComponent.h" 
 #include "DeathEnemy.h"
+#include "DeathEffect.h"
 #include <string>
 
 Enemy::Enemy(class Game* game)
@@ -32,10 +33,21 @@ void Enemy::TakeDamage(float amount, const Vector2& bulletDir) {
         mStateComponent->OnDamageTaken();
     }
 
+    if (mSprite) {
+        mSprite->FlashRed(0.1f);
+    }
+
     if (mHPComponent->IsDead()) {
         if (GetState() == EAlive) {
             Vector2 launchVel = bulletDir * 800.0f;
-            new DeathEnemy(GetGame(), GetPosition(), GetRotation(), mTexturePath, NUM_ExpFRAGMENTS, launchVel, Speed);
+            if (IsUnit) {
+                new DeathEnemy(GetGame(), GetPosition(), GetRotation(), mTexturePath, NUM_ExpFRAGMENTS, launchVel, Speed);
+            }
+            else {
+                DeathEffect* deathEffect = new DeathEffect(GetGame(), 6);
+                deathEffect->SetPosition(GetPosition());
+            }
+            
             SetState(EStop);
         }
     }

@@ -6,6 +6,7 @@
 #include "CameraComponent.h"
 #include "EnemyStateComponent.h"
 #include "Math.h"
+#include "DeathEffect.h"
 
 TargetActor::TargetActor(Game* game)
     : Enemy(game)
@@ -33,6 +34,8 @@ void TargetActor::TakeDamage(float amount, const Vector2& bulletDir)
 
         if (mHPComponent->IsDead())
         {
+            DeathEffect* deathEffect = new DeathEffect(GetGame(), 20);
+            deathEffect->SetPosition(GetPosition());
             SetState(State::EStop);
         }
     }

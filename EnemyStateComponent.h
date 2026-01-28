@@ -30,6 +30,8 @@ public:
 	void SetRangedAttackComponent(RangedAttackComponent* comp) { mRangedAttackComp = comp; }
 	void SetPatrolComponent(PatrolComponent* comp) { mPatrolComp = comp; }
 
+	void SetIsHunter(bool isHunter) { mIsHunter = isHunter; }
+
 	PatrolComponent* mPatrolComp = nullptr;
 	OrbitAttackComponent* mOrbitAttackComp = nullptr;
 	RangedAttackComponent* mRangedAttackComp = nullptr;
@@ -39,10 +41,13 @@ public:
 private:
 	void CheckTransitions();
 	void HandleState(float dt);
+	class Actor* mTarget = nullptr;
 
 	EState mCurrentState;
 	class Player* mPlayer;
 
 	float mAttackDuration = 5.0f;
 	float mAttackTimer = 0.0f;
+
+	bool mIsHunter = false;
 };

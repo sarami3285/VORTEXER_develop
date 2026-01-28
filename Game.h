@@ -120,6 +120,7 @@ public:
     Player* GetPlayer()const { return mPlayer; }
     void SetPlayer(Player* player) { mPlayer = player; }
     vector<class AllyUnit*> GetAllies() const { return mAllies; }
+    class Actor* GetNearestAttackTarget(const Vector2& pos);
 
 
     void AddLineComponent(class LineComponent* line);
@@ -141,11 +142,12 @@ private:
 
     vector<class Enemy*> mEnemies;
     vector<class AllyUnit*> mAllies;
-    std::vector<class TargetActor*> mTargetActors;
+    std::vector<class Actor*> mTargetActors;
 
     int mCurrentMissionID = -1;
     MissionData mMissionData; 
     float mDefenseTimer = 0.0f;
+    float mGameTimer = 0.0f;
 
     std::unique_ptr<Scene> mCurrentScene;
 

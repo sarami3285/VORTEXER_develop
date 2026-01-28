@@ -7,6 +7,7 @@ enum class UpgradeType {
     DefenseBoost,   // 防御力アップ
     SpeedBoost,     // 移動速度アップ
     PelletAdd,       // 散弾数アップ
+    Repair,
     SummonAlly
 };
 

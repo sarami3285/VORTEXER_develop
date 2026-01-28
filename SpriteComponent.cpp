@@ -97,6 +97,25 @@ void SpriteComponent::Draw(SDL_Renderer* renderer, const Vector2& cameraPos)
         SDL_RenderCopyEx(renderer, mTexture, &src, &dst, angle, nullptr, SDL_FLIP_NONE);
         SDL_SetTextureColorMod(mTexture, 255, 255, 255);
         SDL_SetTextureAlphaMod(mTexture, 255);
+
+
+        if (mFlashTimer > 0.0f) {
+            SDL_SetTextureColorMod(mTexture, 255, 0, 0);
+        }
+        else if (mColor.x > 0.0f || mColor.y > 0.0f || mColor.z > 0.0f) {
+            SDL_SetTextureColorMod(mTexture,
+                static_cast<Uint8>(mColor.x * 255.0f),
+                static_cast<Uint8>(mColor.y * 255.0f),
+                static_cast<Uint8>(mColor.z * 255.0f));
+        }
+        else {
+            SDL_SetTextureColorMod(mTexture, 255, 255, 255);
+        }
+        if (mFlashTimer > 0.0f) {
+            mFlashTimer -= 0.016f; // 約60fps想定
+        }
+
+        SDL_RenderCopyEx(renderer, mTexture, &src, &dst, angle, nullptr, SDL_FLIP_NONE);
     }
 }
 

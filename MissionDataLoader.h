@@ -59,6 +59,13 @@ struct TargetConfig {
     std::string texture;
 };
 
+struct ReinforcementConfig {
+    float time;
+    std::string type;
+    int count;
+    bool spawned = false;
+};
+
 struct MissionData {
     int id = 0;
     std::string name;
@@ -68,6 +75,7 @@ struct MissionData {
     std::vector<EnemyConfig> enemyConfigs;
     std::vector<TargetConfig> targetConfigs;
     std::vector<AllyConfig> allyConfigs;
+    std::vector<ReinforcementConfig> reinforcements;
     std::string description;
     std::string iconPath;
 

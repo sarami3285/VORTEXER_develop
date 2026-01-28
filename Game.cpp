@@ -25,7 +25,11 @@
 #include "TargetActor.h"
 #include "BattleShip.h"
 #include "PatrolComponent.h"
+#include "RangeAttackComponent.h"
+#include "AllyBuilding.h"
+#include "EnemyBase.h"
 #include "Interceptor.h"
+#include "RocketTurret.h"
 
 using namespace std;
 
@@ -196,45 +200,103 @@ void Game::GameUpdate() {
 	bool missionObjectiveAchieved = false;
 
 	if (mMissionData.targetType == "Elimination") {
-		bool allEnemiesDead = true;
-		for (auto actor : mActors) {
-			if (dynamic_cast<Enemy*>(actor) && actor->GetState() == Actor::EAlive) {
-				allEnemiesDead = false;
-				break;
+		bool allEnemiesDead = mEnemies.empty();
+
+		if (!allEnemiesDead) {
+			allEnemiesDead = true;
+			for (auto enemy : mEnemies) {
+				if (enemy->GetState() == Actor::EAlive) {
+					allEnemiesDead = false;
+					break;
+				}
 			}
 		}
 		missionObjectiveAchieved = allEnemiesDead;
 	}
 	else if (mMissionData.targetType == "Destruction") {
-		if (mTargetActors.empty()) {
-			missionObjectiveAchieved = true;
-		}
-		else {
-			bool anyTargetAlive = false;
-			for (auto target : mTargetActors) {
-				if (target->GetState() == Actor::EAlive) {
-					anyTargetAlive = true;
-					break;
-				}
+		bool foundAliveTarget = false;
+		int aliveCount = 0;
+
+		for (auto target : mTargetActors) {
+			if (target && target->GetState() == Actor::EAlive) {
+				foundAliveTarget = true;
+				aliveCount++;
 			}
-			missionObjectiveAchieved = !anyTargetAlive;
 		}
+
+		missionObjectiveAchieved = !foundAliveTarget;
 	}
 	else if (mMissionData.targetType == "Defense") {
 		if (!mTargetActors.empty() && mTargetActors[0]->GetState() == Actor::EStop) {
-			SDL_Log("Mission Failed: Defense Target Destroyed! Requesting Result Scene.");
-
-			const bool isWin = false;
-			const int earnedCurrency = 0;
-
 			mSceneChangeRequested = true;
-			mNextScene = std::make_unique<ResultScene>(this, mRenderer, isWin, earnedCurrency);
+			mNextScene = std::make_unique<ResultScene>(this, mRenderer, false, 0);
 			return;
 		}
 
 		mDefenseTimer += deltaTime;
 		if (mDefenseTimer >= mMissionData.defenseDuration) {
 			missionObjectiveAchieved = true;
+		}
+	}
+
+	mGameTimer += deltaTime;
+
+	// Game.cpp の増援出現処理セクションを修正
+
+	for (auto& wave : mMissionData.reinforcements) {
+		// 未スポーンかつ時間が経過している場合のみ実行
+		if (!wave.spawned && mGameTimer >= wave.time) {
+			// 処理の最初にフラグを立てて、重複実行を物理的に遮断する
+			wave.spawned = true;
+
+			float mapW = CameraComponent::mMapWidth;
+			float mapH = CameraComponent::mMapHeight;
+			Vector2 pPos = mPlayer->GetPosition();
+
+			// 四隅から最も遠い場所を特定する計算
+			std::vector<Vector2> corners = {
+				Vector2(0.0f, 0.0f),
+				Vector2(mapW, 0.0f),
+				Vector2(0.0f, mapH),
+				Vector2(mapW, mapH)
+			};
+
+			Vector2 farCorner = corners[0];
+			float maxDistSq = -1.0f;
+			for (const auto& c : corners) {
+				float d = (pPos - c).LengthSq();
+				if (d > maxDistSq) {
+					maxDistSq = d;
+					farCorner = c;
+				}
+			}
+
+			// wave.countで指定された数だけ正確に生成
+			for (int i = 0; i < wave.count; i++) {
+				Enemy* enemy = nullptr;
+				EnemyConfig cfg;
+				cfg.type = wave.type;
+
+				// 出現位置が重ならないように微調整
+				Vector2 spawnPos = farCorner;
+				spawnPos.x += (spawnPos.x < 100.0f) ? 100.0f : -100.0f;
+				spawnPos.y += (spawnPos.y < 100.0f) ? 100.0f : -100.0f;
+				spawnPos += Vector2(i * 40.0f, (i % 2) * 40.0f);
+
+				InstanceEnemy(cfg, enemy, spawnPos);
+
+				if (enemy && !mEnemies.empty()) {
+					if (auto stateComp = enemy->GetComponent<EnemyStateComponent>()) {
+						stateComp->SetIsHunter(true);
+						stateComp->SetState(EnemyStateComponent::EState::Attack);
+
+						if (auto attackComp = enemy->GetComponent<RangedAttackComponent>()) {
+							attackComp->mChaseRange = 99999.0f;
+							attackComp->SetIsActive(true);
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -262,11 +324,9 @@ void Game::GameUpdate() {
 
 	if (mHUDActor && mHUDActor->GetMiniMapLogic()) {
 		std::vector<Vector2> enemyPositions;
-		for (auto actor : mActors) {
-			for (auto enemy : mEnemies) {
-				if (enemy->GetState() == Actor::EAlive) {
-					enemyPositions.push_back(enemy->GetPosition());
-				}
+		for (auto enemy : mEnemies) {
+			if (enemy && enemy->GetState() == Actor::EAlive) {
+				enemyPositions.push_back(enemy->GetPosition());
 			}
 		}
 		mHUDActor->GetMiniMapLogic()->SetTargets(enemyPositions);
@@ -499,7 +559,7 @@ void Game::LoadData(int missionID) {
 	weaponIcon->SetOffset(Vector2(200.0f, 630.0f));
 	mHUDActor->SetPosition(Vector2(0.0f, 0.0f));
 
-	if (mMissionData.targetType == "Destruction") {
+	if (!mMissionData.targetConfigs.empty()) {
 		for (const auto& config : mMissionData.targetConfigs) {
 			TargetActor* target = new TargetActor(this);
 			target->SetPosition(config.position);
@@ -517,18 +577,15 @@ void Game::LoadData(int missionID) {
 			mTargetActors.push_back(target);
 		}
 	}
-	else if (mMissionData.targetType == "Defense") {
-		TargetActor* core = new TargetActor(this);
-		if (mMissionData.defenseTarget.type == "Core") {
-			core->SetPosition(mMissionData.defenseTarget.position);
-		}
+	if (mMissionData.targetType == "Defense") {
+		AllyBuilding* building = new AllyBuilding(
+			this,
+			mMissionData.defenseTarget.position,
+			mMissionData.defenseTarget.hp,
+			mMissionData.defenseTarget.texture
+		);
 
-		if (core->GetHPComponent() && mMissionData.defenseTarget.hp > 0) {
-			core->GetHPComponent()->SetMaxHP(mMissionData.defenseTarget.hp);
-			core->GetHPComponent()->SetHP(mMissionData.defenseTarget.hp);
-		}
-
-		mTargetActors.push_back(core);
+		mTargetActors.push_back(building);
 		mDefenseTimer = 0.0f;
 	}
 
@@ -556,7 +613,6 @@ void Game::LoadData(int missionID) {
 				InstanceEnemy(config, enemy, pos);
 
 				if (enemy) {
-					AddEnemy(enemy);
 					HUDSpriteComponent* hpBar = new HUDSpriteComponent(mHUDActor);
 					hpBar->SetTexture(GetTexture("Assets/HP1.png"));
 					hpBar->SetOffset(Vector2(0, -50.0f));
@@ -584,6 +640,10 @@ void Game::UnloadData() {
 	mActors.clear();
 	mWaitingActors.clear();
 	mSprites.clear();
+	mEnemies.clear();
+	mTargetActors.clear();
+	mAllies.clear();
+	mLineComponents.clear();
 
 	for (auto& tex : mTextures) {
 		SDL_DestroyTexture(tex.second);
@@ -625,6 +685,9 @@ void Game::ResetGameSceneState() {
 	mMissionCompleteTime = 0;
 	mSceneChangeRequested = false;
 	mNextScene = nullptr;
+	mGameTimer = 0.0f;
+	mDefenseTimer = 0.0f;
+	mCreditsEarned = 0;
 }
 
 void Game::Shutdown() {
@@ -757,7 +820,10 @@ void Game::AddObtainedWeapon(const std::string& weaponName) {
 }
 
 void Game::AddEnemy(Enemy* enemy) {
-	mEnemies.emplace_back(enemy);
+	auto it = std::find(mEnemies.begin(), mEnemies.end(), enemy); 
+	if (it == mEnemies.end()) {
+		mEnemies.emplace_back(enemy); 
+	} 
 }
 
 void Game::RemoveEnemy(Enemy* enemy) {
@@ -801,7 +867,7 @@ void Game::RemoveAlly(AllyUnit* ally) {
 }
 
 Actor* Game::GetNearestTarget(const Vector2& pos) {
-	Actor* nearest = nullptr;
+	/*Actor* nearest = nullptr;
 	float minSqDist = FLT_MAX;
 	std::vector<Actor*> targets;
 
@@ -815,15 +881,51 @@ Actor* Game::GetNearestTarget(const Vector2& pos) {
 		}
 	}
 
+	for (Actor* target : mTargetActors) {
+		if (target && target->GetState() == Actor::EAlive) {
+			targets.push_back(target);
+		}
+	}
+
 	for (Actor* target : targets) {
 		Vector2 diff = target->GetPosition() - pos;
 		float sqDist = diff.LengthSq();
-
 		if (sqDist < minSqDist) {
 			minSqDist = sqDist;
 			nearest = target;
 		}
 	}
+	return nearest;*/
+
+	Actor* nearest = nullptr;
+	float minDist = std::numeric_limits<float>::max();
+
+	if (mPlayer && mPlayer->GetState() == Actor::EAlive) {
+		float dist = (mPlayer->GetPosition() - pos).LengthSq();
+		minDist = dist;
+		nearest = mPlayer;
+	}
+
+	for (auto ally : mAllies) {
+		if (ally->GetState() == Actor::EAlive) {
+			float dist = (ally->GetPosition() - pos).LengthSq();
+			if (dist < minDist) {
+				minDist = dist;
+				nearest = ally;
+			}
+		}
+	}
+
+	for (auto target : mTargetActors) {
+		if (target->GetState() == Actor::EAlive) {
+			float dist = (target->GetPosition() - pos).LengthSq();
+			if (dist < minDist) {
+				minDist = dist;
+				nearest = target;
+			}
+		}
+	}
+
 	return nearest;
 }
 
@@ -875,6 +977,7 @@ std::vector<UpgradeOption> Game::GetRandomUpgrades(int count) {
 		{ UpgradeType::FireRateBoost, "連射強化", "発射間隔が短縮", 0.90f },
 		{ UpgradeType::DefenseBoost, "装甲強化", "被ダメージが10%減少", 0.90f },
 		{ UpgradeType::SpeedBoost, "機動力強化", "移動速度が10%上昇", 1.10f },
+		{ UpgradeType::Repair , "回復" , "体力を40%回復する", 1.40f },
 		{ UpgradeType::SummonAlly, "増援要請", "友軍攻撃ヘリを投入", 1.0f }
 	};
 
@@ -899,6 +1002,18 @@ void Game::InstanceEnemy(const EnemyConfig& config, Enemy*& enemy, Vector2 pos) 
 	else if (config.type == "SentryGun") {
 		enemy = new SentryGun(this);
 		enemy->SetPosition(pos);
+	}
+	else if (config.type == "EnemyBase") {
+		for (const auto& pos : config.fixedPositions) {
+			EnemyBase* eb = new EnemyBase(this);
+			eb->SetPosition(pos);
+		}
+	}
+	else if (config.type == "RocketTurret") {
+		for (const auto& pos : config.fixedPositions) {
+			RocketTurret* eb = new RocketTurret(this);
+			eb->SetPosition(pos);
+		}
 	}
 	else if (config.type == "BattleShip") {
 		enemy = new BattleShip(this, pos);
@@ -927,8 +1042,6 @@ void Game::InstanceEnemy(const EnemyConfig& config, Enemy*& enemy, Vector2 pos) 
 			if (config.mainShipType != "BattleShip") {
 				flagship->SetPosition(centerPos);
 			}
-
-			AddEnemy(flagship);
 			HUDSpriteComponent* hpBar = new HUDSpriteComponent(mHUDActor);
 			hpBar->SetTexture(GetTexture("Assets/HP1.png"));
 			hpBar->SetOffset(Vector2(0, -50.0f));
@@ -985,8 +1098,6 @@ void Game::InstanceEnemy(const EnemyConfig& config, Enemy*& enemy, Vector2 pos) 
 					if (guardShipType != "BattleShip") {
 						guard->SetPosition(guardPos);
 					}
-
-					AddEnemy(guard);
 
 					if (PatrolComponent* pc = guard->GetComponent<PatrolComponent>()) {
 						pc->SetFormationTarget(flagship, offset);

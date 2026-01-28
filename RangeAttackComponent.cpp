@@ -83,18 +83,27 @@ void RangedAttackComponent::Execute(float dt)
 		moveEnabled = false;
 	}
 
-	if (!mIsEnabled || !mPlayer || mOwner->GetState() != Actor::EAlive) return;
+	// 1. ターゲットの動的決定
+	// 基本は一番近いターゲット（プレイヤーまたは防衛対象）を取得
+	Actor* target = mOwner->GetGame()->GetNearestTarget(mOwner->GetPosition());
+
+	// ターゲットがいない、または自身の状態が異常なら終了
+	if (!mIsEnabled || !target || mOwner->GetState() != Actor::EAlive) return;
 
 	mFireCooldown -= dt;
 
-	Vector2 toPlayer = mPlayer->GetPosition() - mOwner->GetPosition();
-	float dist = toPlayer.Length();
+	// ターゲットへのベクトルを算出（mPlayerをtargetに置換）
+	Vector2 toTarget = target->GetPosition() - mOwner->GetPosition();
+	float dist = toTarget.Length();
 
 	class MoveComponent* mc = mOwner->GetComponent<MoveComponent>();
 	if (!mc) return;
 
-	toPlayer.Normalize();
-	float targetAngle = Math::Atan2(toPlayer.y, toPlayer.x);
+	Vector2 dir = toTarget;
+	dir.Normalize();
+
+	// ターゲットの方を向く回転制御
+	float targetAngle = Math::Atan2(dir.y, dir.x);
 	float currentAngle = mOwner->GetRotation();
 	float diff = Math::WrapAngle(targetAngle - currentAngle);
 	float idealAngularSpeed = diff / dt;
@@ -102,31 +111,29 @@ void RangedAttackComponent::Execute(float dt)
 	float rotationInput = Math::Clamp(idealAngularSpeed, -mChaseTurnSpeed, mChaseTurnSpeed);
 	mc->SetAngularSpeed(rotationInput);
 
-	if (!mDisableMovement) 
+	if (!mDisableMovement)
 	{
-		if (dist > mAttackRange && dist <= mChaseRange)
+		if (dist > mAttackRange)
 		{
 			mc->SetForwardSpeed(mChaseSpeed);
 			mCurrentBurstCount = 0;
 			mBurstDelayTimer = 0.0f;
 		}
-		else 
+		else
 		{
 			mc->SetForwardSpeed(0.0f);
 		}
 	}
 
+	// ターゲットが射程内なら攻撃
 	if (dist <= mAttackRange)
 	{
-		Vector2 fireDir = toPlayer;
-		fireDir.Normalize();
-
 		if (mCurrentBurstCount > 0)
 		{
 			mBurstDelayTimer -= dt;
 			if (mBurstDelayTimer <= 0.0f)
 			{
-				FireBullet(fireDir);
+				FireBullet(dir);
 
 				mCurrentBurstCount--;
 
@@ -150,7 +157,22 @@ void RangedAttackComponent::Execute(float dt)
 
 	if (mUseLaserSight)
 	{
-		UpdateLaserSight(dist);
+		// レーザーサイトもターゲットの位置に合わせる
+		if (!mLineComp) {
+			mLineComp = mOwner->GetComponent<LineComponent>();
+		}
+		if (mLineComp)
+		{
+			if (dist <= mAttackRange)
+			{
+				mLineComp->SetTargetPos(target->GetPosition());
+				mLineComp->SetVisibility(true);
+			}
+			else
+			{
+				mLineComp->SetVisibility(false);
+			}
+		}
 	}
 }
 

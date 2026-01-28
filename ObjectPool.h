@@ -15,7 +15,6 @@ public:
 		}
 	}
 
-	// メモリ貸し出し
 	T* Allocate() {
 		if (mFreeList.empty()) {
 			Expand(mGrowSize);
@@ -25,7 +24,6 @@ public:
 		return ptr;
 	}
 
-	// メモリ返却
 	void Free(T* ptr) {
 		mFreeList.push_back(ptr);
 	}

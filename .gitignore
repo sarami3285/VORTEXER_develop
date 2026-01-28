@@ -9,7 +9,6 @@ build/
 *.VC.db
 
 # ビルド成果物
-Assets/
 Debug/
 Release/
 x64/

@@ -8,6 +8,7 @@ public:
     CameraComponent(class Actor* owner);
 
     void Update(float deltaTime) override;
+    void Shake(float intensity, float duration);
 
     Vector2 GetCameraPos() const { return mCameraPos; }
     void SetMapSize(float width, float height) {
@@ -19,15 +20,15 @@ public:
 
     }
 
+    static float mMapWidth;
+    static float mMapHeight;
     static const float MapOffset;
 
 private:
     Vector2 mCameraPos;
     float mScreenWidth = 1024.0f;
     float mScreenHeight = 768.0f;
-
-public:
-    static float mMapWidth;
-    static float mMapHeight;
+    float mShakeTimer = 0.0f;
+    float mShakeIntensity = 0.0f;
 };
 

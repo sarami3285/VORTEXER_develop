@@ -30,6 +30,8 @@ public:
 
     void SetColor(float r, float g, float b);
 
+    void FlashRed(float duration) { mFlashTimer = duration; }
+
 
     int mShadowWidth;
     int mShadowHeight;
@@ -48,4 +50,6 @@ protected:
 
     bool mCastShadow;
 
+private:
+    float mFlashTimer = 0.0f;
 };

@@ -1,24 +1,30 @@
 #pragma once
 #include "Component.h"
+#include "EnemyBehaviorComponent.h"
 #include "Math.h"
 
-class HighSpeedPassComponent : public Component
+class HighSpeedPassComponent : public EnemyBehaviorComponent
 {
 public:
-    enum EAIState { Approach, Withdraw, Recover };
+    enum EAIState { Warning, Approach, Withdraw, Recover };
 
     HighSpeedPassComponent(class Actor* owner);
-    void Update(float deltaTime) override;
+    void Execute(float dt) override;
 
-    float mMaxSpeed = 700.0f;       // 接近・離脱時の最高速度
-    float mTurnSpeed = 120.0f;      // 旋回時の回転速度
-    float mAttackRange = 500.0f;    // 射撃を開始する距離
-    float mPassDistance = 150.0f;   // 離脱に移行する自機との接近閾値
-    float mWithdrawTime = 1.5f;     // 離脱直進を続ける時間
+    float mMaxSpeed = 800.0f;
+    float mTurnSpeed = 5.0f;
+    float mAttackRange = 800.0f;
+    float mPassDistance = 150.0f;
+    float mWarningTime = 0.2f;
 
 private:
+    void CheckMapBounds();
+    void FireDoubleMissile();
+
+    Vector2 mFixedTargetPos;
     EAIState mCurrentState;
     float mTimer;
     class Player* mPlayer;
-    bool IsMissile = true;
+    class LineComponent* mWarningLine;
+    bool mHasFiredMissile = false;
 };

@@ -28,6 +28,7 @@ public:
 	void UpdateActor(float deltaTime) override;
 	void ActorInput(const uint8_t* keyState) override;
 	void TakeDamage(int damage);
+	void TakeRepair(int amount);
 
 	void SetWeapon(const WeaponData& weapon);
 	const WeaponData& GetWeapon() const;

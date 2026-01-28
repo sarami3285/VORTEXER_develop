@@ -21,7 +21,6 @@ Player::Player(Game* game)
 	mSpriteComponent->SetColor(1.0f, 1.0f, 1.0f);
 
 	mCollision = new CollisionComponent(this , 15.0f);
-
 	mCameraComponent = new CameraComponent(this);
 
 	mWeaponComponent = new WeaponComponent(this);
@@ -277,14 +276,19 @@ Vector2 Player::ScreenToWorld(int screenX, int screenY)
 
 void Player::TakeDamage(int damage) {
 	mHPComponent->TakeDamage(damage * DeffenceRate);
+	mCameraComponent->Shake(damage , 0.5f);
+	mSpriteComponent->FlashRed(0.1f);
 	if (mHPComponent->IsDead())
 	{
-		SDL_Log("GameOver ( ﾟДﾟ)");
-		SetState(Actor::State::EStop);
-		DeathEffect* effect = new DeathEffect(GetGame());
+		//SetState(Actor::State::EStop);
+		DeathEffect* effect = new DeathEffect(GetGame() , 10);
 		effect->SetPosition(GetPosition());
 		GetGame()->AddActor(effect);
+		SetState(Actor::EStop);
 	}
+}
+void Player::TakeRepair(int amount) {
+	mHPComponent->Heal(amount);
 }
 
 void Player::SetWeapon(const WeaponData& weapon)
@@ -354,6 +358,9 @@ void Player::LevelUp() {
 		case UpgradeType::SpeedBoost:
 			bg->SetTexture(GetGame()->GetTexture("Assets/Skill_SpeedUp.png"));
 			break;
+		case UpgradeType::Repair:
+			bg->SetTexture(GetGame()->GetTexture("Assets/Skill_Repair.png"));
+			break;
 		case UpgradeType::SummonAlly:
 			bg->SetTexture(GetGame()->GetTexture("Assets/Skill_SummonInterceptor.png"));
 			break;
@@ -400,6 +407,10 @@ void Player::ApplyUpgrade(const UpgradeOption& opt) {
 
 	case UpgradeType::DefenseBoost:
 		DeffenceRate *= 0.9f;
+		break;
+
+	case UpgradeType::Repair:
+		TakeRepair((mHPComponent->GetMaxHP()) * (2.0f/5.0f));
 		break;
 
 	case UpgradeType::SpeedBoost:

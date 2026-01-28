@@ -149,15 +149,18 @@
   <ItemGroup>
     <ClInclude Include="ActiveSkill.h" />
     <ClInclude Include="AllyAIComponent.h" />
+    <ClInclude Include="AllyBuilding.h" />
     <ClInclude Include="AllyUnit.h" />
     <ClInclude Include="AudioComponent.h" />
     <ClInclude Include="BattleShip.h" />
     <ClInclude Include="BulletComponent.h" />
     <ClInclude Include="DataManager.h" />
     <ClInclude Include="DeathEnemy.h" />
+    <ClInclude Include="Debris.h" />
     <ClInclude Include="DroneDeploySkill.h" />
     <ClInclude Include="DroneGuard.h" />
     <ClInclude Include="Enemy.h" />
+    <ClInclude Include="EnemyBase.h" />
     <ClInclude Include="EnemyBehaviorComponent.h" />
     <ClInclude Include="EnemyBullet.h" />
     <ClInclude Include="EnemyFragment.h" />
@@ -184,6 +187,8 @@
     <ClInclude Include="RangeAttackComponent.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="resource2.h" />
+    <ClInclude Include="RocketAttack.h" />
+    <ClInclude Include="RocketTurret.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Scenes.h" />
     <ClInclude Include="ScrollItemComponent.h" />
@@ -216,6 +221,7 @@
     <ClCompile Include="Actor.cpp" />
     <ClCompile Include="Actor.h" />
     <ClCompile Include="AllyAIComponent.cpp" />
+    <ClCompile Include="AllyBuilding.cpp" />
     <ClCompile Include="AllyUnit.cpp" />
     <ClCompile Include="AudioComponent.cpp" />
     <ClCompile Include="BattleShip.cpp" />
@@ -226,8 +232,10 @@
     <ClCompile Include="DeathEffect.cpp" />
     <ClCompile Include="DeathEffect.h" />
     <ClCompile Include="DeathEnemy.cpp" />
+    <ClCompile Include="Debris.cpp" />
     <ClCompile Include="DroneGuard.cpp" />
     <ClCompile Include="Enemy.cpp" />
+    <ClCompile Include="EnemyBase.cpp" />
     <ClCompile Include="EnemyBehaviorComponent.cpp" />
     <ClCompile Include="EnemyBullet.cpp" />
     <ClCompile Include="EnemyFragment.cpp" />
@@ -246,6 +254,8 @@
     <ClCompile Include="ParticleActor.cpp" />
     <ClCompile Include="PatrolComponent.cpp" />
     <ClCompile Include="RangeAttackComponent.cpp" />
+    <ClCompile Include="RocketAttack.cpp" />
+    <ClCompile Include="RocketTurret.cpp" />
     <ClCompile Include="Scenes.cpp" />
     <ClCompile Include="ScrollItemComponent.cpp" />
     <ClCompile Include="SentryGun.cpp" />

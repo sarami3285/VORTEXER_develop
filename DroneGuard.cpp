@@ -36,6 +36,7 @@ DroneGuard::DroneGuard(Game* game)
 	mTexturePath = "Assets/Heri.png";
 	NUM_ExpFRAGMENTS = 3;
 	SpriteComponent* sc = new SpriteComponent(this, 100, mTexturePath, true ,Vector2 {50,50});
+	mSprite = sc;
 	sc->SetColor(1.0f, 1.0f, 1.0f);
 
 	OrbitAttackComponent* orbitComp = new OrbitAttackComponent(this, mPlayer);

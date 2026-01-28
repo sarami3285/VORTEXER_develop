@@ -17,21 +17,16 @@
 #include "MetalFragment.h"
 #include "DeathEnemy.h"
 
-LowLevelEnemy::LowLevelEnemy(Game* game)
-    : Enemy(game)
-{
-    mHPComponent = new HPComponent(this, 75);
-    mPlayer = game->GetPlayer();
+LowLevelEnemy::LowLevelEnemy(Game* game) : Enemy(game) {
+    mHPComponent = new HPComponent(this, 75); mPlayer = game->GetPlayer();
 
-    Vector2 minPos(CameraComponent::MapOffset, CameraComponent::MapOffset);
-    Vector2 maxPos(CameraComponent::mMapWidth - CameraComponent::MapOffset, CameraComponent::mMapHeight - CameraComponent::MapOffset);
-    SetPosition(GetRandomPositionInRange(minPos, maxPos));
     SetRotation(Random::GetFloatRange(0.0f, Math::TwoPi));
 
-    new MoveComponent(this, 0, 400.0f, 180.0f);
+    new MoveComponent(this, 0, 400.0f, 720.0f);
     mTexturePath = "Assets/Tank1.png";
     NUM_ExpFRAGMENTS = 3;
-    SpriteComponent* sc = new SpriteComponent(this, 3, mTexturePath, true , Vector2{5,5});
+    SpriteComponent* sc = new SpriteComponent(this, 3, mTexturePath, true, Vector2{ 5,5 });
+    mSprite = sc;
     sc->SetColor(1.0f, 1.0f, 1.0f);
 
     mCollision = new CollisionComponent(this, 25.0f);
@@ -39,16 +34,14 @@ LowLevelEnemy::LowLevelEnemy(Game* game)
     new HPBarComponent(this, mHPComponent);
 
     PatrolComponent* patrolComp = new PatrolComponent(this);
-
     RangedAttackComponent* attackComp = new RangedAttackComponent(this, mPlayer, false);
     EnemyStateComponent* stateComp = new EnemyStateComponent(this, mPlayer);
 
     this->SetStateComponent(stateComp);
+
     stateComp->SetRangedAttackComponent(attackComp);
     stateComp->SetPatrolComponent(patrolComp);
     stateComp->SetSearchRange(500.0f);
-
-    SetEnemyState(EnemyStateComponent::EState::Patrol);
 
     attackComp->mChaseRange = 500.0f;
     attackComp->mAttackRange = 300.0f;
